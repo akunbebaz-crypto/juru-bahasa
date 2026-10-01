@@ -103,6 +103,21 @@ input[type=password],input[type=text]{flex:1;min-width:0;font:14px var(--f-mono)
 .wrap:not(.ai) .ai-only{display:none}
 .wrap.p-openai .prov-gemini{display:none}
 .nosink{display:none!important}
+.openenv{display:grid;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.openenv[hidden]{display:none}
+.ohead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lamp{font:600 12px var(--f-mono);padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.lamp.on{color:#fff;background:var(--ok);border-color:var(--ok)}
+.meter-bar{position:relative;height:14px;border-radius:7px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+.meter-bar .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--muted);transition:width .08s linear}
+.meter-bar .fill.on{background:var(--ok)}
+.meter-bar .thr{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--lamp);left:60%}
+.meter-cap{display:flex;justify-content:space-between;gap:8px;font:12px var(--f-mono);color:var(--muted);flex-wrap:wrap}
+.orow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ptt{display:grid;gap:2px;justify-items:center;padding:18px;border-radius:12px;font:700 18px var(--f-body);background:var(--panel);border:2px solid var(--line);user-select:none;-webkit-user-select:none;touch-action:none}
+.ptt small{font:500 12px var(--f-body);color:var(--muted)}
+.ptt.down{background:var(--lamp-soft);border-color:var(--lamp)}
+@media (max-width:760px){.orow{grid-template-columns:1fr 1fr}}
 .turns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .turns[hidden]{display:none}
 .turn{display:grid;gap:4px;text-align:left;padding:14px 16px;border-radius:12px;font:600 clamp(16px,2.4vw,20px)/1.25 var(--f-body)}
@@ -146,6 +161,11 @@ input[type=password],input[type=text]{flex:1;min-width:0;font:14px var(--f-mono)
     <div>Pasang di iPhone: ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas) di Safari, lalu pilih <b>Tambahkan ke Layar Utama</b>. Aplikasi akan terbuka layar penuh dari ikonnya.</div>
     <button id="iosHintClose" aria-label="Tutup petunjuk">Tutup</button>
   </div>
+  <div class="install" id="andHint" hidden>
+    <div id="andText">Pasang di HP Android: ketuk menu <b>⋮</b> di Chrome, lalu pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>.</div>
+    <button id="andInstall" hidden>Pasang aplikasi</button>
+    <button id="andHintClose" aria-label="Tutup petunjuk">Tutup</button>
+  </div>
 
   <section class="console" aria-label="Kontrol">
     <div class="seg kind" role="group" aria-label="Jenis mesin">
@@ -163,6 +183,22 @@ input[type=password],input[type=text]{flex:1;min-width:0;font:14px var(--f-mono)
       <button class="turn" id="turnA" aria-pressed="true"><small>Giliran bicara · tombol 1</small><span id="turnALabel">Indonesia → English</span></button>
       <button class="turn" id="turnB" aria-pressed="false"><small>Giliran bicara · tombol 2</small><span id="turnBLabel">English → Indonesia</span></button>
       <label class="check turnauto"><input type="checkbox" id="autoTurn"> Pindah giliran otomatis setelah terjemahan selesai diputar</label>
+    </div>
+
+    <div class="openenv ai-only prov-gemini" id="openPanel" hidden>
+      <div class="ohead"><span class="label">Penyaring lingkungan ramai</span><span class="lamp" id="gateLamp">Menunggu</span></div>
+      <div class="meter-bar" aria-hidden="true"><div class="fill" id="lvlFill"></div><div class="thr" id="lvlThr"></div></div>
+      <div class="meter-cap"><span id="lvlNow">Level – dBFS</span><span id="lvlInfo">Ambang otomatis</span></div>
+      <div class="orow">
+        <div class="field"><label class="label" for="gateMargin">Selektivitas</label>
+          <div class="range-row"><input type="range" id="gateMargin" min="4" max="24" step="1" value="12"><output id="gateMarginOut">12 dB</output></div>
+        </div>
+        <div class="field"><span class="label">Kalibrasi</span><button id="calBtn">Kalibrasi ruangan</button></div>
+        <div class="field"><span class="label">Kendali</span>
+          <label class="check"><input type="checkbox" id="pttMode"> Tekan-bicara</label>
+        </div>
+      </div>
+      <button class="ptt" id="pttBtn" hidden>Tahan untuk bicara <small>atau tahan tombol Spasi</small></button>
     </div>
 
     <div class="settings">
@@ -183,6 +219,12 @@ input[type=password],input[type=text]{flex:1;min-width:0;font:14px var(--f-mono)
       </div>
       <div class="field ai-only prov-gemini"><span class="label">Bila tertinggal</span>
         <label class="check"><input type="checkbox" id="aiCatch"> Percepat otomatis 1,2× sampai terkejar</label>
+      </div>
+      <div class="field ai-only prov-gemini"><span class="label">Lingkungan</span>
+        <div class="seg" role="group" aria-label="Lingkungan">
+          <button id="envNormal" aria-pressed="true" title="Ruangan tenang: semua suara diteruskan">Normal</button>
+          <button id="envOpen" aria-pressed="false" title="Ruangan ramai: tapis bising dan obrolan latar">Ramai</button>
+        </div>
       </div>
       <div class="field ai-only prov-gemini"><span class="label">Gema speaker</span>
         <label class="check"><input type="checkbox" id="echoGuard" checked> Mikrofon diam saat terjemahan diputar</label>
@@ -622,7 +664,8 @@ const AI_MODEL = 'gemini-3.5-live-translate-preview';              // penerjemah
 const AGENT_MODELS = ['gemini-3.8-live', 'gemini-3.1-flash-live-preview']; // Live biasa: suara bisa dipilih
 function interpreterPrompt(src, tgt, twoWay){
   const S_ = L(src), T_ = L(tgt);
-  const core = 'You are a professional conference interpreter working in real time. You are NOT an assistant or chatbot: never answer questions, never comment, never greet, never explain, never add or omit content. Whenever you hear speech, immediately speak its faithful translation and nothing else. Keep names, ranks, units, numbers and technical or military terms exact. Match the speaker\'s formality. Speak clearly at a steady, even pace; do not rush or speed up. If the audio is unclear or only noise, stay silent.';
+  const noisy = S.openEnv ? ' The room is noisy with background conversations. Only interpret the main speaker, who is closest to the microphone and clearly louder. Ignore distant voices, side conversations, crowd noise, announcements, music and fragments you cannot hear clearly; never translate them.' : '';
+  const core = 'You are a professional conference interpreter working in real time. You are NOT an assistant or chatbot: never answer questions, never comment, never greet, never explain, never add or omit content. Whenever you hear speech, immediately speak its faithful translation and nothing else. Keep names, ranks, units, numbers and technical or military terms exact. Match the speaker\'s formality. Speak clearly at a steady, even pace; do not rush or speed up. If the audio is unclear or only noise, stay silent.' + noisy;
   if (twoWay && S_.code !== 'auto')
     return `${core}\nThis is a two-way conversation between a ${S_.en} speaker and a ${T_.en} speaker. When you hear ${S_.en}, speak the translation in ${T_.en}. When you hear ${T_.en}, speak the translation in ${S_.en}. Any other language: translate into ${T_.en}.`;
   const from = S_.code === 'auto' ? 'The speaker may use any language.' : `The speaker normally speaks ${S_.en}; if they switch language, still translate.`;
@@ -667,6 +710,41 @@ function makeDownsampler(rate, onChunk){
     }
   };
 }
+// Gerbang suara dekat: hanya meloloskan audio yang jelas lebih keras dari bising/obrolan latar.
+// Bekerja per potongan 100 ms (1600 sampel PCM16 @16 kHz), dibagi 10 sub-bingkai 10 ms.
+class VoiceGate {
+  constructor(){ this.reset(); this.margin = 12; this.hold = 6; this.cal = null; }
+  reset(){ this.hist = []; this.holdLeft = 0; this.prev = null; this.lastDb = -90; this.floorDb = -60; }
+  static frameDb(pcm, off, n){
+    let s = 0; for (let i = off; i < off + n; i++) { const v = pcm[i] / 32768; s += v * v; }
+    return 10 * Math.log10(s / n + 1e-10);
+  }
+  // Ambang aktif: hasil kalibrasi bila ada, selain itu lantai bising adaptif + margin
+  threshold(){ return this.cal != null ? this.cal : this.floorDb + this.margin; }
+  // pcm: Int16Array 1600. Mengembalikan daftar potongan yang dikirim apa adanya (0, 1, atau 2 bila ada pra-gulir)
+  process(pcm){
+    const sub = []; for (let k = 0; k < 10; k++) sub.push(VoiceGate.frameDb(pcm, k * 160, 160));
+    const sorted = sub.slice().sort((a, b) => a - b);
+    const peak = sorted[9], second = sorted[8], quiet = sorted[2];
+    this.lastDb = second;
+    // lantai bising: persentil-20 dari sub-bingkai tenang selama ~6 detik terakhir
+    this.hist.push(quiet); if (this.hist.length > 60) this.hist.shift();
+    const h = this.hist.slice().sort((a, b) => a - b);
+    this.floorDb = Math.max(-75, h[Math.floor(h.length * 0.2)]);
+    const thr = this.threshold();
+    const voiced = second >= thr;            // minimal 2 sub-bingkai di atas ambang: bukan sekadar klik/benturan
+    const out = [];
+    if (voiced) {
+      if (this.holdLeft === 0 && this.prev) out.push(this.prev);   // pra-gulir: awal kata tidak terpotong
+      this.holdLeft = this.hold;
+      out.push(pcm);
+    } else if (this.holdLeft > 0) { this.holdLeft--; out.push(pcm); }
+    this.prev = pcm;
+    this.open = out.length > 0;
+    return out;
+  }
+}
+
 const SILENCE_B64 = btoa(String.fromCharCode.apply(null, new Uint8Array(3200)));
 function b64FromBuf(buf){ let s = '', b = new Uint8Array(buf); for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
 function bufFromB64(b64){ const s = atob(b64), b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b.buffer; }
@@ -738,6 +816,7 @@ const OA_LANG = { id:'id', en:'en', ja:'ja', zh:'zh', fr:'fr', de:'de' };   // b
 
 const AI = {
   running:false, specs:null, inCtx:null, outCtx:null, gain:null, stream:null, node:null,
+  gate:new VoiceGate(), calib:null, hp:null, lp:null,
   st:new Stretcher(), stTimer:null, turnTimer:null, lastOutSide:null, catching:false, pc:null, oaAudio:null,
   nextTime:0, lastInAt:0, awaitingAudio:false, inText:'', outText:'', flushTimer:null, openedAt:0, userStop:false, sdk:null, lats:[],
 
@@ -914,7 +993,9 @@ const AI = {
         systemInstruction:{ parts:[{ text: spec.prompt }] },
         // jangan berhenti bicara saat pembicara melanjutkan; potong frasa cepat (jeda 300 ms)
         realtimeInputConfig:{ activityHandling:'NO_INTERRUPTION',
-          automaticActivityDetection:{ endOfSpeechSensitivity:'END_SENSITIVITY_HIGH', silenceDurationMs:300, prefixPaddingMs:100 } },
+          automaticActivityDetection: S.openEnv
+            ? { startOfSpeechSensitivity:'START_SENSITIVITY_LOW', endOfSpeechSensitivity:'END_SENSITIVITY_HIGH', silenceDurationMs:350, prefixPaddingMs:200 }
+            : { endOfSpeechSensitivity:'END_SENSITIVITY_HIGH', silenceDurationMs:300, prefixPaddingMs:100 } },
         contextWindowCompression:{ slidingWindow:{} } };
     }
     spec.ready = false;
@@ -925,15 +1006,59 @@ const AI = {
       onclose: e => this.onClose(e, spec),
     }});
   },
+  applyFilters(){
+    if (!this.hp) return;
+    this.hp.frequency.value = S.openEnv ? 120 : 40;
+    this.lp.frequency.value = S.openEnv ? 7000 : 7800;
+  },
+  // Pilih potongan yang benar-benar dikirim ke AI
+  pick(ab){
+    if (this.gated()) return null;                          // terjemahan sedang diputar: jangan dengar speaker sendiri
+    const pcm = new Int16Array(ab);
+    if (this.calib) { this.calibFeed(pcm); return null; }
+    if (!S.openEnv) return [ab];
+    const passed = this.gate.process(pcm);                  // tetap dijalankan agar lantai bising & meter terus diperbarui
+    const out = $('pttMode').checked ? (S.pttDown ? [ab] : []) : passed.map(p => p.buffer);
+    showMeter(this.gate, out.length > 0);
+    return out;
+  },
   send(ab){
     if (!this.specs) return;
-    const data = this.gated() ? SILENCE_B64 : b64FromBuf(ab);
+    const chunks = this.pick(ab);
+    const list = chunks && chunks.length ? chunks.map(b64FromBuf) : [SILENCE_B64];
     const turn = S.dirMode === 'turn';
     for (const sp of this.specs) {
       if (!sp.session) continue;
       if (turn && sp.side && sp.side !== S.turn) continue;   // hanya jalur yang sedang giliran yang mendengar
-      try { sp.session.sendRealtimeInput({ audio:{ data, mimeType:'audio/pcm;rate=16000' } }); } catch(_) {}
+      for (const data of list) { try { sp.session.sendRealtimeInput({ audio:{ data, mimeType:'audio/pcm;rate=16000' } }); } catch(_) {} }
     }
+  },
+  // Kalibrasi 2 tahap: 3 s semua diam (ukur bising), 4 s pembicara bicara normal (ukur suara)
+  startCalib(){
+    if (!this.running || !this.specs) { status('Tekan Mulai dulu, lalu tekan Kalibrasi ruangan.', 'err'); return; }
+    this.calib = { phase:1, n:0, quiet:[], speech:[] };
+    status('Kalibrasi 1/2: mohon semua diam selama 3 detik…');
+  },
+  calibFeed(pcm){
+    const c = this.calib, sub = [];
+    for (let k = 0; k < 10; k++) sub.push(VoiceGate.frameDb(pcm, k * 160, 160));
+    sub.sort((a, b) => a - b);
+    showMeter({ lastDb: sub[8], threshold: () => this.gate.threshold() }, false);
+    if (c.phase === 1) { c.quiet.push(sub[5]); if (++c.n >= 30) { c.phase = 2; c.n = 0; status('Kalibrasi 2/2: pembicara silakan bicara normal selama 4 detik…'); } return; }
+    c.speech.push(sub[8]);
+    if (++c.n < 40) return;
+    const med = a => a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)];
+    const floor = med(c.quiet), sp = c.speech.slice().sort((x, y) => x - y)[Math.floor(c.speech.length * 0.75)];
+    this.calib = null;
+    const gap = sp - floor;
+    if (gap < 6) {
+      this.gate.cal = null;
+      status(`Kalibrasi gagal: suara pembicara hanya ${gap.toFixed(0)} dB di atas bising. Dekatkan mikrofon ke pembicara (ideal 10–30 cm) atau pakai mikrofon klip, lalu ulangi.`, 'err');
+    } else {
+      this.gate.cal = floor + Math.max(6, 0.45 * gap);
+      status(`Kalibrasi selesai: pembicara ${gap.toFixed(0)} dB di atas bising ruangan. Ambang dikunci di ${this.gate.cal.toFixed(0)} dBFS.` + (gap < 12 ? ' Selisihnya tipis; mikrofon klip akan jauh lebih andal.' : ''), gap < 12 ? '' : 'ok');
+    }
+    updateGateInfo();
   },
   onClose(e, spec){
     spec.session = null;
@@ -1045,7 +1170,9 @@ const AI = {
       // iPhone: minta sesi audio rekam+putar agar suara terjemahan tetap keluar saat mikrofon aktif
       try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch(_) {}
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: {
-        channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+        // Ramai: penguat otomatis dimatikan agar obrolan jauh tidak ikut dikeraskan setara pembicara dekat
+        channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: !S.openEnv } });
+      this.gate.reset(); this.calib = null;
       this.listSinks();
       if (oa) { await this.startOpenAI(); try { wake = await navigator.wakeLock?.request('screen'); } catch(_) {} return; }
       await this.connectAll();
@@ -1053,7 +1180,13 @@ const AI = {
       // laju sampel bawaan perangkat; penurun sampel mengubahnya ke 16 kHz (aman untuk Safari/iPhone)
       this.inCtx = new AudioContext({ latencyHint:'interactive' });
       if (this.inCtx.state === 'suspended') { try { await this.inCtx.resume(); } catch(_) {} }
-      const srcNode = this.inCtx.createMediaStreamSource(this.stream);
+      const micNode = this.inCtx.createMediaStreamSource(this.stream);
+      // Tapis pita suara manusia: buang dengung/getaran rendah (<120 Hz) dan desis tinggi (>7 kHz)
+      this.hp = this.inCtx.createBiquadFilter(); this.hp.type = 'highpass'; this.hp.Q.value = 0.707;
+      this.lp = this.inCtx.createBiquadFilter(); this.lp.type = 'lowpass'; this.lp.Q.value = 0.707;
+      micNode.connect(this.hp); this.hp.connect(this.lp);
+      this.applyFilters();
+      const srcNode = this.lp;
       const send = ab => this.send(ab);
       // Jalur utama: AudioWorklet. Saat file dibuka dari komputer (file://) Chrome sering menolaknya,
       // maka dicoba lewat data: URL, lalu jatuh ke ScriptProcessor yang selalu berjalan.
@@ -1086,6 +1219,7 @@ const AI = {
     this.flush();
     for (const sp of this.specs || []) { sp.retired = true; try { sp.session?.close(); } catch(_) {} } this.specs = null;
     this.stopOpenAI();
+    this.calib = null; this.hp = this.lp = null; showMeter(null, false);
     clearTimeout(this.stTimer); clearTimeout(this.turnTimer); this.st.reset(); this.catching = false; this.lastOutSide = null;
     try { this.node?.disconnect(); } catch(_) {} this.node = null;
     this.stream?.getTracks().forEach(t => t.stop()); this.stream = null;
@@ -1146,7 +1280,8 @@ function updateAiUi(){
       : 'Suara pilihan memakai Gemini Live dengan instruksi juru bahasa: suara tetap sesuai pilihan dan bahasa pembicara bisa ditentukan, tetapi terjemahan keluar per frasa setelah jeda singkat, jadi sedikit lebih lambat.')
     + ' Audio dikirim ke server Google selama mode AI aktif. Kunci API hanya disimpan di browser ini.';
   try { localStorage.setItem('bjb-ai', JSON.stringify({ voice:$('aiVoice').value, dir:S.dirMode, src:$('src').value,
-    echo:$('echoGuard').checked, autoTurn:$('autoTurn').checked })); } catch(_) {}
+    echo:$('echoGuard').checked, autoTurn:$('autoTurn').checked,
+    env:S.openEnv, margin:+$('gateMargin').value, ptt:$('pttMode').checked })); } catch(_) {}
 }
 S.twoWay = false; S.prov = 'gemini';
 $('aiProv').onchange = () => { S.prov = $('aiProv').value; updateAiUi(); if (AI.running) { AI.stop(true); AI.start(); } };
@@ -1156,7 +1291,47 @@ try { $('aiRate').value = localStorage.getItem('bjb-airate') || '1'; $('aiRateOu
       $('aiCatch').checked = localStorage.getItem('bjb-aicatch') === '1'; } catch(_) {}
 $('aiRate').addEventListener('change', () => { try { localStorage.setItem('bjb-airate', $('aiRate').value); } catch(_) {} });
 $('aiCatch').addEventListener('change', () => { try { localStorage.setItem('bjb-aicatch', $('aiCatch').checked ? '1' : '0'); } catch(_) {} });
-S.dirMode = 'one'; S.turn = 'a';
+S.dirMode = 'one'; S.turn = 'a'; S.openEnv = false; S.pttDown = false;
+const dbToPct = db => Math.max(0, Math.min(100, (db + 75) / 75 * 100));
+let meterAt = 0;
+function showMeter(g, open){
+  if (!g) { $('lvlFill').style.width = '0'; $('gateLamp').textContent = 'Menunggu'; $('gateLamp').className = 'lamp'; return; }
+  const now = performance.now(); if (now - meterAt < 60 && open === showMeter.last) return; meterAt = now; showMeter.last = open;
+  $('lvlFill').style.width = dbToPct(g.lastDb) + '%'; $('lvlFill').classList.toggle('on', open);
+  $('lvlThr').style.left = dbToPct(g.threshold()) + '%';
+  $('lvlNow').textContent = `Level ${g.lastDb.toFixed(0)} dBFS`;
+  $('gateLamp').textContent = AI.calib ? 'Kalibrasi…' : open ? 'Suara diteruskan' : ($('pttMode').checked ? 'Tahan tombol untuk bicara' : 'Bising ditahan');
+  $('gateLamp').className = 'lamp' + (open ? ' on' : '');
+}
+function updateGateInfo(){
+  const g = AI.gate;
+  $('lvlInfo').textContent = g.cal != null ? `Ambang terkalibrasi ${g.cal.toFixed(0)} dBFS` : `Ambang otomatis: bising ${g.floorDb.toFixed(0)} + ${g.margin} dB`;
+  $('lvlThr').style.left = dbToPct(g.threshold()) + '%';
+}
+function setEnv(open, quiet){
+  S.openEnv = open;
+  $('envNormal').setAttribute('aria-pressed', !open); $('envOpen').setAttribute('aria-pressed', open);
+  $('openPanel').hidden = !open;
+  $('pttBtn').hidden = !(open && $('pttMode').checked);
+  if (quiet) return;
+  updateAiUi();
+  // ganti setelan mikrofon (penguat otomatis) & instruksi AI: sambung ulang sebentar
+  if (AI.running && S.prov !== 'openai') { AI.stop(true); AI.start(); }
+}
+$('envNormal').onclick = () => setEnv(false);
+$('envOpen').onclick = () => setEnv(true);
+bindRange('gateMargin', 'gateMarginOut', v => v + ' dB');
+$('gateMargin').addEventListener('input', () => { AI.gate.margin = +$('gateMargin').value; AI.gate.cal = null; updateGateInfo(); updateAiUi(); });
+$('calBtn').onclick = () => AI.startCalib();
+$('pttMode').addEventListener('change', () => { $('pttBtn').hidden = !$('pttMode').checked; S.pttDown = false; updateAiUi(); });
+const pttSet = v => { S.pttDown = v; $('pttBtn').classList.toggle('down', v); };
+$('pttBtn').addEventListener('pointerdown', e => { e.preventDefault(); try { $('pttBtn').setPointerCapture(e.pointerId); } catch(_) {} pttSet(true); });
+['pointerup','pointercancel','lostpointercapture'].forEach(t => $('pttBtn').addEventListener(t, () => pttSet(false)));
+$('pttBtn').addEventListener('contextmenu', e => e.preventDefault());
+const pttKey = e => S.openEnv && $('pttMode').checked && AI.running && e.code === 'Space' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName);
+window.addEventListener('keydown', e => { if (pttKey(e)) { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) pttSet(true); } }, true);
+window.addEventListener('keyup', e => { if (pttKey(e)) { e.preventDefault(); e.stopImmediatePropagation(); pttSet(false); } }, true);
+setInterval(() => { if (S.openEnv && AI.running) updateGateInfo(); }, 1000);
 function setDirMode(mode, quiet){
   S.dirMode = mode; S.twoWay = mode === 'auto2';
   [['dir1','one'],['dir2','auto2'],['dir3','turn']].forEach(([id, m]) => $(id).setAttribute('aria-pressed', mode === m));
@@ -1196,6 +1371,9 @@ try {
     setKind('ai');
     if (a.src) $('src').value = a.src;
     if (a.echo === false) $('echoGuard').checked = false;
+    if (a.margin) { $('gateMargin').value = a.margin; $('gateMarginOut').textContent = a.margin + ' dB'; AI.gate.margin = +a.margin; }
+    if (a.ptt) $('pttMode').checked = true;
+    if (a.env) setEnv(true, true);
     if (a.autoTurn) $('autoTurn').checked = true;
     const dm = a.dir || (a.two ? 'auto2' : 'one');
     if (dm !== 'one' && a.src !== 'auto') setDirMode(dm, true);
@@ -1212,6 +1390,25 @@ if (!('setSinkId' in AudioContext.prototype)) { const f = $('sink').closest('.fi
   let dismissed = false; try { dismissed = localStorage.getItem('bjb-ioshint') === '1'; } catch(_) {}
   if (ios && !standalone && !dismissed) $('iosHint').hidden = false;
   $('iosHintClose').onclick = () => { $('iosHint').hidden = true; try { localStorage.setItem('bjb-ioshint', '1'); } catch(_) {} };
+  // Android: tombol pasang langsung bila Chrome menawarkannya, selain itu petunjuk lewat menu ⋮
+  const android = /android/i.test(navigator.userAgent);
+  let dismissedA = false; try { dismissedA = localStorage.getItem('bjb-andhint') === '1'; } catch(_) {}
+  let deferred = null;
+  if (android && !standalone && !dismissedA) $('andHint').hidden = false;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferred = e;
+    if (dismissedA || standalone) return;
+    $('andHint').hidden = false; $('andInstall').hidden = false;
+    $('andText').innerHTML = 'Pasang <b>Bilik Juru Bahasa</b> sebagai aplikasi di layar utama, tanpa file APK.';
+  });
+  $('andInstall').onclick = async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    try { const r = await deferred.userChoice; if (r.outcome === 'accepted') $('andHint').hidden = true; } catch(_) {}
+    deferred = null;
+  };
+  window.addEventListener('appinstalled', () => { $('andHint').hidden = true; status('Aplikasi terpasang. Buka dari ikon Juru Bahasa di layar utama.', 'ok'); });
+  $('andHintClose').onclick = () => { $('andHint').hidden = true; try { localStorage.setItem('bjb-andhint', '1'); } catch(_) {} };
   if (location.protocol === 'https:' && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
